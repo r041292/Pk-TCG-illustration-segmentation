@@ -17,6 +17,31 @@ The default flow is:
 img -> img_pre -> img_segm_yolo -> img_refined -> img_clasif
 ```
 
+## Trained models
+
+The repository ships the three final (`best.pt`) weights used by the pipeline.
+Each was produced by fine-tuning a pretrained **nano** (`n`) YOLO26 weight,
+rather than using the base weight directly. The nano variant keeps inference
+time and memory use low, which matters when the pipeline is also run on CPU.
+The `s`, `m`, `l`, and `x` variants have greater capacity, but should be
+compared under an equivalent validation setup before replacing these weights.
+
+| Stage | Included final weight | Task and base weight | Training | Training images | Validation metrics for the best weight |
+| --- | --- | --- | --- | --- | --- |
+| Card localization | `models/card_obb/roboflow_obb_20260825_134802_best.pt` | OBB; `yolo26n-obb.pt` | 150 epochs, `imgsz=1024`, batch 4 | 157 training images (50 validation images). | Precision (B): 0.99855; recall (B): 0.98000; mAP50 (B): 0.99254; mAP50-95 (B): 0.98340. |
+| Artwork-layout classification | `models/artwork_classifier/tipo_ilustracion_v1_best.pt` | Classification; `yolo26n-cls.pt` | 60 epochs, `imgsz=224`, batch 16 | 175 training images (37 validation and 37 test images). | Top-1 accuracy: 1.00000; top-5 accuracy: 1.00000; validation loss: 0.02817. |
+| Illustration extraction | `models/illustration_segmentation/ilustracion_ventana_seg_20260825_191947_best.pt` | Segmentation; `yolo26n-seg.pt` | 150 epochs, `imgsz=640`, batch 8 | 124 training images (34 validation and 17 test images). | Mask (M): precision 1.00000, recall 0.99789, mAP50 0.99500, mAP50-95 0.98522. Box (B): precision 1.00000, recall 0.99789, mAP50 0.99500, mAP50-95 0.97525. |
+
+The preceding values are the metrics stored in each checkpoint and correspond
+to its **validation** split.
+
+Segmentation is used only after a card is classified as `arte_ventana`: a
+pixel-level mask is needed to create a transparent RGBA PNG. A bounding-box
+detector would only return a rectangle and would include non-illustration
+regions. In contrast, the first stage uses OBB because its four corners retain
+the orientation of a rotated or perspective-photographed card, enabling later
+rectification.
+
 Each stage has a distinct role in turning a casual card photograph into a
 usable illustration asset:
 
