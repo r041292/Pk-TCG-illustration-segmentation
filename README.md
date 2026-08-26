@@ -20,8 +20,11 @@ img -> img_pre -> img_segm_yolo -> img_refined -> img_clasif
 ## Requirements
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements_pipeline.txt
 ```
+
+`requirements.txt` additionally includes optional packages for the separate
+illustration-upscaling utilities; it is not required for the main pipeline.
 
 The final trained `.pt` weights used by the pipeline are included under `models/`:
 

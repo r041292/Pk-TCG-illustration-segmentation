@@ -1,0 +1,7 @@
+# Minimal dependencies for the card detection, rectification, classification,
+# and illustration-segmentation pipeline. Compatible with Google Colab.
+numpy>=1.26,<3
+Pillow>=10,<12
+opencv-python>=4.10,<5
+scikit-image>=0.24,<1
+ultralytics
