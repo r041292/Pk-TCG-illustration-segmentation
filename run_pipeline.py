@@ -23,6 +23,7 @@ def run_step(label: str, script: str, arguments: list[str]) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--input", type=Path, default=Path("img"), help="Carpeta de fotografías de entrada.")
     parser.add_argument("--limit", type=int, default=0, help="Máximo de imágenes por etapa; 0 procesa todas.")
     parser.add_argument("--device", default="cpu", help="Dispositivo de YOLO, por ejemplo 'cpu' o '0'.")
     parser.add_argument("--obb-model", type=Path, help="Ruta al peso YOLO-OBB de detección de cartas.")
@@ -46,7 +47,7 @@ def main() -> None:
     if args.limit < 0:
         raise ValueError("--limit no puede ser negativo.")
 
-    preprocess_args = ["--limit", str(args.limit)]
+    preprocess_args = ["--input", str(args.input), "--limit", str(args.limit)]
     if args.illumination_correction:
         preprocess_args.append("--illumination-correction")
     if args.white_balance:
