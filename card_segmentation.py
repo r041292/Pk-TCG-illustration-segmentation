@@ -329,8 +329,17 @@ def refine_with_active_contour(image: np.ndarray, box: np.ndarray) -> np.ndarray
 
 def line_intersection(first: LineModelND, second: LineModelND) -> np.ndarray | None:
     """Calcula la intersección de dos rectas de skimage en coordenadas x, y."""
-    origin_a, direction_a = first.origin, first.direction
-    origin_b, direction_b = second.origin, second.direction
+    # scikit-image expone estos valores como atributos separados en versiones
+    # recientes, pero en versiones anteriores (como algunas de Colab) solo
+    # están disponibles en ``params``.
+    if hasattr(first, "origin"):
+        origin_a, direction_a = first.origin, first.direction
+    else:
+        origin_a, direction_a = first.params
+    if hasattr(second, "origin"):
+        origin_b, direction_b = second.origin, second.direction
+    else:
+        origin_b, direction_b = second.params
     normal_a = np.array([-direction_a[1], direction_a[0]])
     normal_b = np.array([-direction_b[1], direction_b[0]])
     system = np.vstack((normal_a, normal_b))
