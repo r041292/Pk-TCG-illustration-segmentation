@@ -1,0 +1,61 @@
+# Python environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Trained/downloaded model weights (only the three final pipeline weights are versioned)
+*.pt
+*.pth
+!models/
+!models/card_obb/
+!models/card_obb/*.pt
+!models/artwork_classifier/
+!models/artwork_classifier/*.pt
+!models/illustration_segmentation/
+!models/illustration_segmentation/*.pt
+*.onnx
+*.engine
+runs/
+
+# Source datasets, images, and generated pipeline outputs
+dataset_cartas/
+img/
+img_pre/
+img_segm/
+img_segm_yolo/
+img_refined/
+img_clasif/
+img_enhanced_1x/
+img_hyperscaled/
+img_pre_baseline/
+img_pre_preview/
+img_segm_baseline/
+reto/
+*.csv
+*.jpg
+*.jpeg
+*.png
+*.webp
+
+# Keep only the Colab execution notebook in version control
+notebooks/*
+!notebooks/colab_pipeline_pokemon.ipynb
+*.ipynb
+!notebooks/
+!notebooks/colab_pipeline_pokemon.ipynb
+
+# Private notes and local training/experimental utilities
+CONTEXTO_PROYECTO.md
+notas_rubiel.txt
+classify_card_type.py
+classify_illustration_quality.py
+prepare_card_type_dataset.py
+prepare_local_yolo_obb.py
+train_card_type_classifier.py
+
+# Local editor and operating-system files
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

@@ -1,0 +1,11 @@
+# Dependencias del preprocesamiento inicial de imágenes.
+numpy>=1.26,<3
+Pillow>=10,<12
+opencv-python>=4.10,<5
+scikit-image>=0.24,<1
+ultralytics
+# Hiperescalado x4 no generativo de ilustraciones.
+basicsr==1.4.2
+realesrgan==0.3.0
+# SwinIR se incluye en third_party/SwinIR; esta es su dependencia de ejecución.
+timm>=1.0,<2
