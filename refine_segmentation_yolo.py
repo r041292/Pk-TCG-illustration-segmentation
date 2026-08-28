@@ -18,7 +18,11 @@ from card_segmentation import CARD_RATIO, build_edge_map, order_points, refine_w
 # o ejecuta el script con --legacy-refinement.
 USE_CANDIDATE_SELECTION = True
 CANDIDATE_SCORE_MARGIN = 0.06
-MIXED_SCORE_MARGIN = 0.10
+# Un candidato mixto puede recuperar bordes externos válidos aunque no gane
+# con el margen más estricto usado para evitar refinamientos completos
+# dudosos. Mantenerlo alineado con CANDIDATE_SCORE_MARGIN evita que una caja
+# mixta coherente sea descartada por una diferencia arbitraria.
+MIXED_SCORE_MARGIN = CANDIDATE_SCORE_MARGIN
 CANDIDATE_SEARCH_RADIUS = 8
 CANDIDATE_SIDE_START = 0.10
 CANDIDATE_SIDE_END = 0.90
@@ -32,10 +36,11 @@ BLUE_STABLE_CONFIDENCE = 0.95
 BLUE_STABLE_GEOMETRY = 0.90
 BLUE_STABLE_GOOD_SIDES = 3
 # Guardia adicional para el borde externo: es ligeramente más permisiva que
-# BLUE_STABLE_*, pero solo se activa cuando el verde está anidado dentro del
-# azul. Así un borde interno no puede ganar únicamente por textura local.
+# BLUE_STABLE_*. Se activa cuando el verde contiene al menos un lado interno
+# respecto del azul, aunque los demás lados verdes expandan el área total.
+# Así un borde interno aislado no puede ganar únicamente por textura local.
 EXTERNAL_GUARD_CONFIDENCE = 0.95
-EXTERNAL_GUARD_GEOMETRY = 0.88
+EXTERNAL_GUARD_GEOMETRY = 0.82
 EXTERNAL_GUARD_GOOD_SIDES = 2
 
 
@@ -396,12 +401,13 @@ def select_preferred_candidate(
     blue_area = max(abs(float(cv2.contourArea(order_points(initial_box).astype(np.float32)))), 1.0)
     green_inside_flags = _green_sides_inside_blue(refined_box, initial_box)
     nested_green = bool(green_area / blue_area < 0.95 and sum(green_inside_flags) >= 3)
+    green_internal_side_conflict = bool(any(green_inside_flags))
     blue_external_guard = bool(
         yolo_confidence >= EXTERNAL_GUARD_CONFIDENCE
         and blue["geometry_score"] >= EXTERNAL_GUARD_GEOMETRY
         and int(np.sum(blue_side_scores >= 0.55)) >= EXTERNAL_GUARD_GOOD_SIDES
     )
-    external_guard_active = bool(blue_external_guard and nested_green)
+    external_guard_active = bool(blue_external_guard and green_internal_side_conflict)
     green_sides_allowed = _green_sides_allowed_by_external_guard(
         green_inside_flags,
         blue_side_scores,
@@ -510,6 +516,7 @@ def select_preferred_candidate(
         "external_guard_active": external_guard_active,
         "green_area_ratio_blue": green_area / blue_area,
         "green_sides_inside_blue": green_inside_flags,
+        "green_internal_side_conflict": green_internal_side_conflict,
         "green_sides_allowed_by_external_guard": green_sides_allowed,
         "nested_green": nested_green,
         "internal_side_flags": internal_side_flags,

@@ -26,6 +26,16 @@ SEGMENTATION_MODEL = Path(
 EXPECTED_CLASSES = {"arte_completo", "arte_ventana"}
 
 
+def remove_stale_output(path: Path) -> None:
+    """Elimina una salida anterior de la otra rama sin bloquear la corrida."""
+    if not path.is_file():
+        return
+    try:
+        path.unlink()
+    except OSError as error:
+        print(f"Advertencia: no se pudo retirar salida antigua {path}: {error}")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=Path("img_refined"))
@@ -135,6 +145,10 @@ def main() -> None:
         )
         card_destination = (complete_dir if art_type == "arte_completo" else window_dir) / source.name
         shutil.copy2(source, card_destination)
+        stale_card_dir = window_dir if art_type == "arte_completo" else complete_dir
+        remove_stale_output(stale_card_dir / source.name)
+        if art_type == "arte_completo":
+            remove_stale_output(illustrations_dir / f"{source.stem}_ilustracion.png")
         row: dict[str, object] = {
             "archivo_origen": source.name,
             "tipo_arte": art_type,
