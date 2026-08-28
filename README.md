@@ -2,6 +2,30 @@
 
 An end-to-end Python pipeline that processes photographs of Pokémon Trading Card Game cards, rectifies each card, classifies its artwork layout, and extracts windowed illustrations with transparency.
 
+## Dataset attribution
+
+The input photographs originate from the public Kaggle dataset **[Pokémon TCG
+Real Card Images](https://www.kaggle.com/datasets/ellimaaac/pokmon-tcg-real-card-images/data?select=1k)**
+by **ellimaaac**. Its full distribution is approximately 47 GB, while this
+project only needs the `1k/1k` image collection. Downloading the original
+dataset in Colab solely to use that subset was impractical and could trigger
+download-rate limits.
+
+To make the notebook reproducible and lightweight, the project uses the public
+derived dataset **[Pokémon TCG Real Card Images — 1K Subset](https://www.kaggle.com/datasets/rubielvelasquez/pokemon-tcg-real-card-images-1k-subset)**.
+It is a copy of the original `1k/1k` files, created only to provide the required
+subset directly to the pipeline. No labels, annotations, or image
+transformations were added. The Colab notebook downloads this derivative
+dataset, filters the `_1.jpg` input images, and copies them into `img/` before
+running the pipeline.
+
+Please consult the original dataset page for its terms, license, and attribution
+requirements before redistributing the images or derived datasets. The derived
+subset preserves attribution to **ellimaaac** and does not replace the original
+source.
+
+Pokémon and Pokémon Trading Card Game are trademarks of their respective owners. This repository is an independent technical project and is not affiliated with or endorsed by The Pokémon Company, Nintendo, Game Freak, or Creatures Inc.
+
 ## Pipeline
 
 The complete workflow is executed by `run_pipeline.py`:
@@ -199,27 +223,3 @@ Use `--device 0` to run YOLO inference on the first available GPU, or leave the 
 ## Google Colab
 
 [`notebooks/colab_pipeline_pokemon.ipynb`](notebooks/colab_pipeline_pokemon.ipynb) downloads the dataset, clones this repository, and runs the pipeline with its versioned final weights. It retains an optional, configurable Google Drive path if you later want to override those weights.
-
-## Dataset attribution
-
-The input photographs originate from the public Kaggle dataset **[Pokémon TCG
-Real Card Images](https://www.kaggle.com/datasets/ellimaaac/pokmon-tcg-real-card-images/data?select=1k)**
-by **ellimaaac**. Its full distribution is approximately 47 GB, while this
-project only needs the `1k/1k` image collection. Downloading the original
-dataset in Colab solely to use that subset was impractical and could trigger
-download-rate limits.
-
-To make the notebook reproducible and lightweight, the project uses the public
-derived dataset **[Pokémon TCG Real Card Images — 1K Subset](https://www.kaggle.com/datasets/rubielvelasquez/pokemon-tcg-real-card-images-1k-subset)**.
-It is a copy of the original `1k/1k` files, created only to provide the required
-subset directly to the pipeline. No labels, annotations, or image
-transformations were added. The Colab notebook downloads this derivative
-dataset, filters the `_1.jpg` input images, and copies them into `img/` before
-running the pipeline.
-
-Please consult the original dataset page for its terms, license, and attribution
-requirements before redistributing the images or derived datasets. The derived
-subset preserves attribution to **ellimaaac** and does not replace the original
-source.
-
-Pokémon and Pokémon Trading Card Game are trademarks of their respective owners. This repository is an independent technical project and is not affiliated with or endorsed by The Pokémon Company, Nintendo, Game Freak, or Creatures Inc.
