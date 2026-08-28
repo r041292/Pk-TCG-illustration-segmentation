@@ -72,6 +72,104 @@ For the windowed-art example, the goal is the isolated illustration rather
 than the full card. The full-art example illustrates the alternate branch:
 the full card face is retained because its artwork extends across the card.
 
+## Geometric refinement and crop selection
+
+The YOLO-OBB detector provides a strong initial estimate of the card, but its
+box is not guaranteed to coincide with the physical outer card boundary. This
+is especially difficult in photographs containing protective slabs, glossy
+reflections, holographic surfaces, perspective distortion, or low-contrast
+card edges. In those conditions, the detector may follow an inner frame, while
+an unconstrained edge detector may follow a line from the illustration,
+printed text, an ability separator, or a reflection instead of the card edge.
+
+This ambiguity matters downstream. The rectified image is resized before
+artwork-layout classification, so a crop that is slightly too tight, or that
+uses different physical boundaries on different sides, can change the visual
+layout seen by the classifier. For windowed-art cards, the same geometry is
+also used by the segmentation model to extract the illustration.
+
+The `refine_segmentation_yolo.py` routine addresses this problem in several
+stages:
+
+1. It starts from the four YOLO-OBB corners and builds an adaptive edge map
+   around the detected card.
+2. It fits each side independently with RANSAC inside a narrow band around the
+   YOLO estimate. The local band limits the risk of selecting unrelated lines
+   elsewhere in the photograph.
+3. It validates the RANSAC quadrilateral using the expected card aspect ratio,
+   convexity, area change, displacement, and image bounds. Invalid or unstable
+   refinements fall back to the YOLO box.
+4. It compares candidates instead of accepting the RANSAC result automatically:
+
+   - **Candidates:** each of the four sides can come from either YOLO or RANSAC.
+     The routine evaluates the resulting 16 side-wise combinations, including
+     the all-YOLO baseline and the all-RANSAC quadrilateral.
+   - **Side evidence:** each candidate side is sampled from 10% to 90% of its
+     length. Around every sample, the routine searches for nearby edge pixels
+     within an 8-pixel radius. It records edge coverage and rewards a side when
+     the evidence is close to the proposed line, continuous, strong in gradient,
+     and separated by luminance contrast.
+   - **Candidate score:** the side evidence is combined as 50% line closeness,
+     25% continuity, 15% gradient strength, and 10% luminance contrast. The
+     raw candidate score is then 90% mean side score plus 10% geometric
+     consistency; the geometry component is based mainly on the card aspect
+     ratio, with smaller contributions from side symmetry and image bounds.
+     The adjusted score subtracts a movement penalty from selected RANSAC sides
+     and, when the external-boundary guard is active, an additional penalty for
+     an internal side.
+   - **Decision:** the best adjusted candidate must improve on the YOLO baseline
+     by at least 0.06. If it does not, the original YOLO quadrilateral is kept.
+     This margin makes the refinement conservative: a new boundary must provide
+     materially better evidence to replace the detector result.
+
+5. When a high-confidence YOLO detection contains strong evidence for an
+   external boundary, an additional guard prevents a RANSAC side that lies
+   inside the YOLO box from replacing it. This side-level guard is important:
+   a single internal line can occur even when the other RANSAC sides correctly
+   expand the crop.
+
+For example, for `126184781306_1`, the YOLO baseline scored 0.7378 and the
+best mixed candidate (RANSAC top, right, and left sides plus the YOLO bottom
+side) scored 0.8667 before penalties and 0.8051 after penalties. Its adjusted
+gain over YOLO was 0.0674, which exceeded the 0.06 margin, so the mixed
+quadrilateral was accepted. With a more restrictive 0.10 margin, the same
+candidate would have been rejected even though its evidence was better; that
+was the mechanism behind the previous regression toward `arte_ventana`.
+
+The debug output for this same card is shown below. In the left panel, the blue
+quadrilateral is the original YOLO estimate and the green quadrilateral is the
+RANSAC refinement; the right panel shows the edge map used to evaluate the
+candidate boundaries. The overlay makes the problem visible: the card boundary
+is close to several strong lines, so the final decision must be made side by
+side instead of replacing the complete YOLO box blindly.
+
+<img src="126184781306_1_pre_refine_debug.png" alt="Debug view of YOLO and RANSAC refinement for card 126184781306_1" width="760">
+
+The selected quadrilateral is finally rectified with a perspective transform
+to the standard card output size. This preserves the reliable YOLO sides when
+they are better, recovers valid external RANSAC sides when they are better,
+and allows a mixed solution when the photograph does not have one uniformly
+reliable boundary source. The selection metadata and debug image are saved
+with each refined card so that the decision can be audited.
+
+### Refinement example
+
+The example below illustrates the problem and the resulting solution. The
+input photograph contains perspective distortion and strong horizontal
+reflections. The debug image overlays the initial YOLO estimate in blue and the
+RANSAC refinement in green; its right panel shows the edge evidence used by the
+routine. The final image is the selected quadrilateral after perspective
+rectification.
+
+| 1. Input photograph | 2. Edge and candidate diagnostic | 3. Rectified output |
+| --- | --- | --- |
+| <img src="refine_example_start.jpg" alt="Original photograph of a Pokémon card before refinement" width="280"> | <img src="refine_example_debug.png" alt="YOLO and RANSAC crop candidates with the edge map" width="280"> | <img src="refine_example_final.png" alt="Perspective-rectified Pokémon card after refinement" width="280"> |
+
+This refinement is deliberately kept separate from artwork-layout
+classification: it only decides which card boundary should be rectified. The
+classifier then receives the normalized card image, and the segmentation
+branch is run only when the card is classified as `arte_ventana`.
+
 ## Requirements
 
 ```bash

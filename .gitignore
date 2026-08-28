@@ -38,6 +38,12 @@ reto/
 *.png
 *.webp
 
+# Figures referenced by the README refinement documentation
+!refine_example_start.jpg
+!refine_example_debug.png
+!refine_example_final.png
+!126184781306_1_pre_refine_debug.png
+
 # Keep only the Colab execution notebook in version control
 notebooks/*
 !notebooks/colab_pipeline_pokemon.ipynb
